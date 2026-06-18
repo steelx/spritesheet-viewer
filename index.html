@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Spritesheet Frame Overlay</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 20px;
+      background-color: #1e2525;
+      color: #d4d4d4;
+    }
+
+    canvas {
+      border: 1px solid #4b5e5e;
+      display: block;
+      margin-top: 10px;
+      background-color: #2d3535;
+    }
+
+    input[type="number"] {
+      width: 60px;
+      background-color: #2d3535;
+      color: #d4d4d4;
+      border: 1px solid #4b5e5e;
+      border-radius: 4px;
+      padding: 2px 4px;
+    }
+
+    #tooltip {
+      position: absolute;
+      background: rgba(0, 43, 43, 0.85);
+      color: #e6f0f0;
+      padding: 4px 8px;
+      border-radius: 4px;
+      pointer-events: none;
+      font-size: 2.1rem;
+      display: none;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    #imageInfo {
+      margin-left: 10px;
+      font-style: italic;
+      color: #8a9a9a;
+    }
+
+    h1 {
+      color: #e6f0f0;
+    }
+
+    p {
+      color: #b8c4c4;
+    }
+
+    label {
+      color: #d4d4d4;
+      margin-right: 5px;
+    }
+
+    button {
+      background-color: #3a4a4a;
+      color: #e6f0f0;
+      border: 1px solid #4b5e5e;
+      border-radius: 4px;
+      padding: 4px 10px;
+      margin-left: 26px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #4b5e5e;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Spritesheet Frame Overlay</h1>
+  <p>
+    Select a spritesheet, enter the frame width and height (e.g., 16 and 16), then click "Generate Overlay" to see
+    the grid and frame numbers.
+  </p>
+  <input type="file" id="fileInput" accept="image/*"><br><br>
+  <label for="frameWidth">Frame Width:</label>
+  <input type="number" id="frameWidth" value="16">
+  <label for="frameHeight">Frame Height:</label>
+  <input type="number" id="frameHeight" value="16">
+  <span id="imageInfo"></span>
+  <button id="generateButton">Generate Overlay</button>
+
+  <canvas id="canvas"></canvas>
+  <div id="tooltip"></div>
+
+  <script>
+    const fileInput = document.getElementById("fileInput");
+    const frameWidthInput = document.getElementById("frameWidth");
+    const frameHeightInput = document.getElementById("frameHeight");
+    const generateButton = document.getElementById("generateButton");
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const tooltip = document.getElementById("tooltip");
+    const imageInfo = document.getElementById("imageInfo");
+
+    let image = new Image();
+    let currentFrameWidth = 16;
+    let currentFrameHeight = 16;
+    let cols = 0, rows = 0;
+
+    fileInput.addEventListener("change", function (e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function (event) {
+        image.onload = function () {
+
+          //Set canvas size to the image dimensions
+          canvas.width = image.width;
+          canvas.height = image.height;
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(image, 0, 0);
+
+          imageInfo.textContent = `Image Dimensions: ${image.width} x ${image.height}`;
+
+        }
+        image.src = event.target.result;
+      }
+      reader.readAsDataURL(file);
+    });
+
+    generateButton.addEventListener("click", function () {
+      if (!image.src) {
+        alert("Please select an image first.");
+        return;
+      }
+
+      currentFrameWidth = parseInt(frameWidthInput.value, 10);
+      currentFrameHeight = parseInt(frameHeightInput.value, 10);
+      if (!currentFrameWidth || !currentFrameHeight) {
+        alert("Please enter valid frame dimensions.");
+        return;
+      }
+
+      drawOverlay();
+
+    });
+
+    function drawOverlay() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(image, 0, 0);
+      cols = Math.floor(image.width / currentFrameWidth);
+      rows = Math.floor(image.height / currentFrameHeight);
+      let frameNumber = 0;
+      ctx.strokeStyle = "#FC0A7F";
+      ctx.lineWidth = 1;
+      ctx.font = "12px Arial";
+      ctx.fillStyle = "#FC0A7F";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          const x = col * currentFrameWidth;
+          const y = row * currentFrameHeight;
+          ctx.strokeRect(x, y, currentFrameWidth, currentFrameHeight);
+          ctx.fillText(frameNumber, x + currentFrameWidth / 2, y + currentFrameHeight / 2);
+          frameNumber++;
+        }
+      }
+    }
+
+    canvas.addEventListener("mousemove", function (e) {
+      if (!currentFrameWidth || !currentFrameHeight) return;
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      const col = Math.floor(mouseX / currentFrameWidth);
+      const row = Math.floor(mouseY / currentFrameHeight);
+
+      if (col < cols && row < rows) {
+        const frameNumber = row * cols + col;
+        tooltip.innerText = "Frame Number: " + frameNumber;
+        tooltip.style.left = (e.pageX + 10) + "px";
+        tooltip.style.top = (e.pageY + 10) + "px";
+        tooltip.style.display = "block";
+      } 
+      else {
+        tooltip.style.display = "none";
+      }
+    });
+
+    canvas.addEventListener("mouseleave", function () {
+      tooltip.style.display = "none";
+    });
+  </script>
+</body>
+
+</html>
