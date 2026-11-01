@@ -1,198 +1,1396 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
   <meta charset="UTF-8">
-  <title>Spritesheet Frame Overlay</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ultimate Tiled Spritesheet Inspector :: gridshift.dev</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            tealDark: '#161c1c',
+            tealBg: '#1e2525',
+            tealPanel: '#252e2e',
+            tealCard: '#2d3535',
+            tealBorder: '#4b5e5e',
+            tealMuted: '#8a9a9a',
+            tealText: '#e6f0f0',
+            neonPink: '#FC0A7F',
+            neonCyan: '#00f2fe',
+            neonAmber: '#ffb800'
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
   <style>
     body {
-      font-family: sans-serif;
-      margin: 20px;
       background-color: #1e2525;
-      color: #d4d4d4;
-    }
-
-    canvas {
-      border: 1px solid #4b5e5e;
-      display: block;
-      margin-top: 10px;
-      background-color: #2d3535;
-    }
-
-    input[type="number"] {
-      width: 60px;
-      background-color: #2d3535;
-      color: #d4d4d4;
-      border: 1px solid #4b5e5e;
-      border-radius: 4px;
-      padding: 2px 4px;
-    }
-
-    #tooltip {
-      position: absolute;
-      background: rgba(0, 43, 43, 0.85);
       color: #e6f0f0;
-      padding: 4px 8px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Crisp Pixel Art Scaling */
+    .pixelated {
+      image-rendering: -moz-crisp-edges;
+      image-rendering: -webkit-crisp-edges;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    /* Checkerboard Patterns */
+    .checker-dark {
+      background-color: #222828;
+      background-image:
+        linear-gradient(45deg, #2d3535 25%, transparent 25%),
+        linear-gradient(-45deg, #2d3535 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #2d3535 75%),
+        linear-gradient(-45deg, transparent 75%, #2d3535 75%);
+      background-size: 16px 16px;
+      background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+    }
+
+    .checker-light {
+      background-color: #cbd5e1;
+      background-image:
+        linear-gradient(45deg, #94a3b8 25%, transparent 25%),
+        linear-gradient(-45deg, #94a3b8 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #94a3b8 75%),
+        linear-gradient(-45deg, transparent 75%, #94a3b8 75%);
+      background-size: 16px 16px;
+      background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+    }
+
+    .checker-solid {
+      background-color: #161c1c;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #161c1c;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #4b5e5e;
       border-radius: 4px;
-      pointer-events: none;
-      font-size: 2.1rem;
-      display: none;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     }
 
-    #imageInfo {
-      margin-left: 10px;
-      font-style: italic;
-      color: #8a9a9a;
+    ::-webkit-scrollbar-thumb:hover {
+      background: #FC0A7F;
     }
 
-    h1 {
-      color: #e6f0f0;
-    }
-
-    p {
-      color: #b8c4c4;
-    }
-
-    label {
-      color: #d4d4d4;
-      margin-right: 5px;
-    }
-
-    button {
-      background-color: #3a4a4a;
-      color: #e6f0f0;
-      border: 1px solid #4b5e5e;
-      border-radius: 4px;
-      padding: 4px 10px;
-      margin-left: 26px;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background-color: #4b5e5e;
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      opacity: 1;
     }
   </style>
 </head>
 
-<body>
-  <h1>Spritesheet Frame Overlay</h1>
-  <p>
-    Select a spritesheet, enter the frame width and height (e.g., 16 and 16), then click "Generate Overlay" to see
-    the grid and frame numbers.
-  </p>
-  <input type="file" id="fileInput" accept="image/*"><br><br>
-  <label for="frameWidth">Frame Width:</label>
-  <input type="number" id="frameWidth" value="16">
-  <label for="frameHeight">Frame Height:</label>
-  <input type="number" id="frameHeight" value="16">
-  <span id="imageInfo"></span>
-  <button id="generateButton">Generate Overlay</button>
+<body class="min-h-screen flex flex-col selection:bg-neonPink selection:text-white">
 
-  <canvas id="canvas"></canvas>
-  <div id="tooltip"></div>
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 hidden items-center gap-2 bg-tealDark border border-neonPink text-tealText px-4 py-2.5 rounded-lg shadow-2xl font-mono text-xs transition-all">
+    <i class="fa-solid fa-circle-check text-neonPink"></i>
+    <span id="toastMsg">Copied to clipboard!</span>
+  </div>
+
+  <!-- Top Header & Toolbar -->
+  <header class="bg-tealDark border-b border-tealBorder px-4 py-3 sticky top-0 z-30 shadow-md">
+    <div class="max-w-[1800px] mx-auto flex flex-wrap items-center justify-between gap-3">
+      <!-- Brand Title -->
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-neonPink/15 border border-neonPink flex items-center justify-center text-neonPink shadow-inner">
+          <i class="fa-solid fa-table-cells-large text-lg"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-bold text-base sm:text-lg tracking-tight text-tealText">SDL3 & Tiled Spritesheet Inspector</h1>
+            <span class="text-[11px] font-mono uppercase px-2 py-0.5 rounded bg-tealCard border border-tealBorder text-neonCyan">C17 Helper</span>
+          </div>
+          <p class="text-xs text-tealMuted hidden sm:block">Visual <code class="text-neonPink font-mono">tx / ty</code> math debugger, animation flipbook, C code &amp; <code class="font-mono">.map</code> generator</p>
+        </div>
+      </div>
+
+      <!-- Mode Switcher Tabs (Atlas Inspector vs Map Scratchpad) -->
+      <div class="flex items-center bg-tealBg p-1 rounded-lg border border-tealBorder">
+        <button id="tabAtlasBtn" class="px-3 py-1.5 rounded-md text-xs font-medium transition flex items-center gap-1.5 bg-neonPink text-white shadow">
+          <i class="fa-solid fa-magnifying-glass-chart"></i>
+          <span>Atlas Inspector</span>
+        </button>
+        <button id="tabScratchpadBtn" class="px-3 py-1.5 rounded-md text-xs font-medium transition flex items-center gap-1.5 text-tealMuted hover:text-tealText">
+          <i class="fa-solid fa-paintbrush"></i>
+          <span>Map Matrix Tester</span>
+        </button>
+      </div>
+
+      <!-- File Upload & Demo Preset Controls -->
+      <div class="flex flex-wrap items-center gap-2">
+        <label for="fileInput" class="cursor-pointer bg-tealCard hover:bg-tealBorder/60 text-tealText border border-tealBorder px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-2">
+          <i class="fa-solid fa-upload text-neonCyan"></i>
+          <span>Load PNG / Atlas</span>
+        </label>
+        <input type="file" id="fileInput" accept="image/*" class="hidden">
+
+        <button id="loadDemoBtn" class="bg-neonPink/15 hover:bg-neonPink/25 text-neonPink border border-neonPink/50 px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5" title="Generate procedural 128x128 (16x16 tiles) RPG spritesheet">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+          <span>Load 128x128 RPG Demo</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Secondary Control Bar (Grid Config, Indexing Mode, Zoom, Overlays) -->
+  <section class="bg-tealPanel border-b border-tealBorder px-4 py-2.5">
+    <div class="max-w-[1800px] mx-auto flex flex-wrap items-center justify-between gap-4 text-xs">
+
+      <!-- Left: Frame Size & Spacing -->
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="flex items-center gap-1.5 bg-tealBg px-2.5 py-1 rounded-md border border-tealBorder">
+          <span class="text-tealMuted font-medium">Tile W:</span>
+          <input type="number" id="frameWidth" value="16" min="1" max="512" class="w-14 bg-tealCard text-tealText font-mono text-center border border-tealBorder rounded px-1 py-0.5 focus:outline-none focus:border-neonPink">
+          <span class="text-tealMuted font-medium ml-1">H:</span>
+          <input type="number" id="frameHeight" value="16" min="1" max="512" class="w-14 bg-tealCard text-tealText font-mono text-center border border-tealBorder rounded px-1 py-0.5 focus:outline-none focus:border-neonPink">
+          <span class="text-[10px] text-tealMuted font-mono">px</span>
+        </div>
+
+        <div class="flex items-center gap-1.5 bg-tealBg px-2.5 py-1 rounded-md border border-tealBorder" title="Atlas Margin and Spacing in pixels">
+          <span class="text-tealMuted">Margin:</span>
+          <input type="number" id="marginInput" value="0" min="0" max="128" class="w-12 bg-tealCard text-tealText font-mono text-center border border-tealBorder rounded px-1 py-0.5 focus:outline-none focus:border-neonPink">
+          <span class="text-tealMuted ml-1">Spacing:</span>
+          <input type="number" id="spacingInput" value="0" min="0" max="128" class="w-12 bg-tealCard text-tealText font-mono text-center border border-tealBorder rounded px-1 py-0.5 focus:outline-none focus:border-neonPink">
+        </div>
+
+        <!-- Quick Tile Size Presets -->
+        <div class="hidden xl:flex items-center gap-1">
+          <span class="text-tealMuted mr-1">Presets:</span>
+          <button data-size="8" class="preset-size-btn px-2 py-1 rounded bg-tealCard hover:bg-tealBorder text-tealText font-mono border border-tealBorder">8×8</button>
+          <button data-size="16" class="preset-size-btn px-2 py-1 rounded bg-neonPink/20 text-neonPink font-mono border border-neonPink/50">16×16</button>
+          <button data-size="32" class="preset-size-btn px-2 py-1 rounded bg-tealCard hover:bg-tealBorder text-tealText font-mono border border-tealBorder">32×32</button>
+          <button data-size="64" class="preset-size-btn px-2 py-1 rounded bg-tealCard hover:bg-tealBorder text-tealText font-mono border border-tealBorder">64×64</button>
+        </div>
+      </div>
+
+      <!-- Center: Indexing Mode (0-Based vs 1-Based Tiled GID) -->
+      <div class="flex items-center gap-2 bg-tealBg px-2.5 py-1 rounded-md border border-tealBorder">
+        <span class="text-tealMuted font-medium"><i class="fa-solid fa-hashtag text-neonPink mr-1"></i>Indexing:</span>
+        <button id="mode0Btn" class="px-2.5 py-1 rounded font-mono text-xs transition bg-neonPink text-white font-semibold" title="0-Based indexing: Top-left tile is 0 (tx = id % cols)">
+          0-Based (C Array)
+        </button>
+        <button id="mode1Btn" class="px-2.5 py-1 rounded font-mono text-xs transition text-tealMuted hover:text-tealText" title="1-Based indexing: Top-left tile is 1, 0 is empty (index = id - 1)">
+          1-Based (Tiled GID)
+        </button>
+      </div>
+
+      <!-- Right: Zoom & Overlay Controls -->
+      <div class="flex flex-wrap items-center gap-3">
+        <!-- Zoom Buttons -->
+        <div class="flex items-center gap-1 bg-tealBg px-2 py-1 rounded-md border border-tealBorder">
+          <span class="text-tealMuted mr-1"><i class="fa-solid fa-magnifying-glass"></i></span>
+          <button data-zoom="1" class="zoom-btn px-2 py-0.5 rounded font-mono text-tealMuted hover:text-tealText">1x</button>
+          <button data-zoom="2" class="zoom-btn px-2 py-0.5 rounded font-mono text-tealMuted hover:text-tealText">2x</button>
+          <button data-zoom="3" class="zoom-btn px-2 py-0.5 rounded font-mono bg-neonPink text-white font-semibold">3x</button>
+          <button data-zoom="4" class="zoom-btn px-2 py-0.5 rounded font-mono text-tealMuted hover:text-tealText">4x</button>
+          <button data-zoom="6" class="zoom-btn px-2 py-0.5 rounded font-mono text-tealMuted hover:text-tealText">6x</button>
+        </div>
+
+        <!-- Overlay Toggles -->
+        <div class="flex items-center gap-2 bg-tealBg px-2.5 py-1 rounded-md border border-tealBorder">
+          <label class="flex items-center gap-1.5 cursor-pointer select-none">
+            <input type="checkbox" id="showGridToggle" checked class="accent-[#FC0A7F] rounded">
+            <span>Grid</span>
+          </label>
+          <input type="color" id="gridColorPicker" value="#FC0A7F" class="w-5 h-5 rounded cursor-pointer bg-transparent border-0" title="Grid & Number Overlay Color">
+
+          <span class="text-tealBorder">|</span>
+
+          <label class="flex items-center gap-1.5 cursor-pointer select-none">
+            <input type="checkbox" id="showIdsToggle" checked class="accent-[#FC0A7F] rounded">
+            <span>IDs</span>
+          </label>
+
+          <span class="text-tealBorder">|</span>
+
+          <button id="bgCycleBtn" class="text-tealMuted hover:text-tealText flex items-center gap-1" title="Cycle canvas background">
+            <i class="fa-solid fa-chess-board"></i>
+            <span id="bgLabel">Dark Grid</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Main Workspace Container -->
+  <main class="flex-1 max-w-[1800px] w-full mx-auto p-4 grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+
+    <!-- LEFT / CENTER AREA (8 Cols on Desktop): Atlas Canvas OR Map Matrix Tester -->
+    <div class="lg:col-span-7 xl:col-span-8 flex flex-col gap-4">
+
+      <!-- VIEW 1: ATLAS INSPECTOR VIEWPORT -->
+      <div id="atlasViewPanel" class="bg-tealPanel border border-tealBorder rounded-xl overflow-hidden shadow-lg flex flex-col">
+        <!-- Info Bar above Canvas -->
+        <div class="bg-tealDark/80 border-b border-tealBorder px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div class="flex flex-wrap items-center gap-3 font-mono">
+            <span id="imageNameBadge" class="text-neonCyan font-semibold">demo_rpg_atlas.png</span>
+            <span class="text-tealBorder">•</span>
+            <span id="imageInfo" class="text-tealText">128 × 128 px</span>
+            <span class="text-tealBorder">•</span>
+            <span id="gridSummary" class="text-neonPink">8 cols × 8 rows (64 tiles)</span>
+          </div>
+          <div class="text-tealMuted text-[11px] flex items-center gap-3">
+            <span><kbd class="px-1.5 py-0.5 bg-tealCard border border-tealBorder rounded text-[10px] font-mono">Click</kbd> Pin Tile</span>
+            <span><kbd class="px-1.5 py-0.5 bg-tealCard border border-tealBorder rounded text-[10px] font-mono">Shift+Click</kbd> Select Anim Range</span>
+          </div>
+        </div>
+
+        <!-- Drag & Drop / Scrollable Canvas Viewport -->
+        <div id="dropZone" class="relative overflow-auto min-h-[460px] max-h-[72vh] flex items-center justify-center p-6 checker-dark transition-colors">
+          <canvas id="canvas" class="pixelated shadow-2xl border border-tealBorder cursor-crosshair"></canvas>
+
+          <!-- Drop Overlay Indicator -->
+          <div id="dropOverlay" class="pointer-events-none absolute inset-3 border-2 border-dashed border-neonPink rounded-xl bg-tealDark/90 hidden items-center justify-center flex-col gap-2">
+            <i class="fa-solid fa-cloud-arrow-up text-4xl text-neonPink"></i>
+            <p class="text-sm font-semibold text-tealText">Drop PNG / Spritesheet Here</p>
+          </div>
+        </div>
+
+        <!-- Bottom Status Bar & Animation Strip Bar -->
+        <div class="bg-tealDark border-t border-tealBorder px-4 py-3 flex flex-wrap items-center justify-between gap-4">
+          <!-- Animation Flipbook Previewer -->
+          <div class="flex items-center gap-3">
+            <div class="w-14 h-14 rounded-lg bg-tealCard border border-tealBorder flex items-center justify-center checker-dark relative overflow-hidden shrink-0" title="Live Flipbook Animation Preview (Shift+Click two tiles to animate range)">
+              <canvas id="animCanvas" width="48" height="48" class="pixelated"></canvas>
+            </div>
+            <div class="text-xs space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="font-semibold text-tealText">Animation Flipbook</span>
+                <span id="animRangeBadge" class="font-mono text-[11px] px-1.5 py-0.5 rounded bg-tealCard border border-tealBorder text-neonCyan">Single Tile</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button id="animPlayBtn" class="px-2 py-0.5 rounded bg-tealCard hover:bg-tealBorder border border-tealBorder text-tealText text-[11px] font-mono">
+                  <i class="fa-solid fa-pause mr-1"></i>Pause
+                </button>
+                <span class="text-tealMuted text-[11px]">FPS:</span>
+                <input type="range" id="animFpsSlider" min="1" max="24" value="6" class="w-20 accent-[#FC0A7F]">
+                <span id="animFpsLabel" class="font-mono text-[11px] text-neonPink w-10">6 fps</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Named Tile Constants / Enum Builder Quick Bar -->
+          <div class="flex items-center gap-2 flex-wrap">
+            <input type="text" id="macroNameInput" placeholder="e.g. TILE_GRASS" class="bg-tealCard border border-tealBorder rounded-lg px-2.5 py-1.5 text-xs font-mono text-tealText focus:outline-none focus:border-neonPink w-40">
+            <button id="addMacroBtn" class="bg-neonPink hover:bg-neonPink/90 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
+              <i class="fa-solid fa-plus"></i>
+              <span>Add Selected ID to Enum</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 2: MINI MAP MATRIX TESTER / SCRATCHPAD (Hidden by default) -->
+      <div id="scratchpadViewPanel" class="hidden bg-tealPanel border border-tealBorder rounded-xl overflow-hidden shadow-lg flex-col">
+        <div class="bg-tealDark/80 border-b border-tealBorder px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div class="flex items-center gap-3">
+            <span class="font-semibold text-neonCyan flex items-center gap-1.5">
+              <i class="fa-solid fa-border-all"></i>
+              Interactive Level Map Matrix Tester
+            </span>
+            <div class="flex items-center gap-1.5 bg-tealBg px-2 py-1 rounded border border-tealBorder font-mono">
+              <span class="text-tealMuted">Cols:</span>
+              <input type="number" id="mapColsInput" value="16" min="4" max="32" class="w-12 bg-tealCard text-center rounded border border-tealBorder">
+              <span class="text-tealMuted">Rows:</span>
+              <input type="number" id="mapRowsInput" value="12" min="4" max="24" class="w-12 bg-tealCard text-center rounded border border-tealBorder">
+              <button id="resizeMapBtn" class="ml-1 px-2 py-0.5 bg-tealCard hover:bg-tealBorder rounded text-tealText border border-tealBorder">Apply</button>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button id="fillMapGrassBtn" class="px-2.5 py-1 rounded bg-tealCard hover:bg-tealBorder border border-tealBorder text-tealText">Fill Active Tile</button>
+            <button id="borderMapWallBtn" class="px-2.5 py-1 rounded bg-tealCard hover:bg-tealBorder border border-tealBorder text-tealText">Make Border</button>
+            <button id="clearMapBtn" class="px-2.5 py-1 rounded bg-red-950/60 hover:bg-red-900/60 border border-red-700/50 text-red-200">Clear (0)</button>
+          </div>
+        </div>
+
+        <div class="p-4 grid grid-cols-1 xl:grid-cols-12 gap-4 items-start">
+          <!-- Map Painting Canvas -->
+          <div class="xl:col-span-8 flex flex-col items-center justify-center bg-tealDark p-4 rounded-lg border border-tealBorder overflow-auto">
+            <canvas id="mapPainterCanvas" class="pixelated border border-tealBorder cursor-pointer shadow-lg"></canvas>
+            <p class="text-[11px] text-tealMuted mt-2 font-mono">
+              Left-Click / Drag: Paint current selected tile (<span id="activeBrushBadge" class="text-neonPink font-bold">ID 23</span>) • Right-Click: Erase (0)
+            </p>
+          </div>
+
+          <!-- Export .map / C 2D Array Output -->
+          <div class="xl:col-span-4 flex flex-col gap-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-tealText">Export Map Data</span>
+              <div class="flex gap-1">
+                <button id="exportMapFormatBtn" class="px-2 py-0.5 text-[11px] font-mono rounded bg-neonPink text-white">.map (fscanf)</button>
+                <button id="exportCArrayBtn" class="px-2 py-0.5 text-[11px] font-mono rounded bg-tealCard text-tealMuted border border-tealBorder">C Array</button>
+              </div>
+            </div>
+            <textarea id="mapExportTextarea" readonly rows="14" class="w-full bg-tealDark border border-tealBorder rounded-lg p-2.5 font-mono text-[11px] text-tealText focus:outline-none"></textarea>
+            <button id="copyMapExportBtn" class="w-full py-2 rounded-lg bg-tealCard hover:bg-tealBorder border border-tealBorder text-xs font-medium text-neonCyan transition flex items-center justify-center gap-2">
+              <i class="fa-regular fa-copy"></i>
+              <span>Copy Map Output</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT SIDEBAR (4 Cols on Desktop): Tile Inspector, Visual tx/ty Math & SDL3 Code Generator -->
+    <aside class="lg:col-span-5 xl:col-span-4 flex flex-col gap-4">
+
+      <!-- CARD 1: Magnified Tile Inspector & Coordinates -->
+      <div class="bg-tealPanel border border-tealBorder rounded-xl p-4 shadow-lg">
+        <div class="flex items-center justify-between border-b border-tealBorder pb-2.5 mb-3">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-crosshairs text-neonPink"></i>
+            <h2 class="font-bold text-sm text-tealText">Pinned Tile Inspector</h2>
+          </div>
+          <span id="lockStatusBadge" class="text-[11px] font-mono px-2 py-0.5 rounded bg-neonPink/20 border border-neonPink/50 text-neonPink">
+            Pinned #23
+          </span>
+        </div>
+
+        <div class="flex items-center gap-4">
+          <!-- Zoomed Single Tile Preview with Pixel Rulers -->
+          <div class="relative p-3 bg-tealDark rounded-lg border border-tealBorder shrink-0">
+            <span id="rulerTopLeft" class="absolute top-0.5 left-1 font-mono text-[9px] text-neonCyan">(112, 32)</span>
+            <canvas id="previewCanvas" width="96" height="96" class="pixelated checker-dark border border-tealBorder rounded mt-2"></canvas>
+            <span id="rulerSize" class="block text-center font-mono text-[10px] text-tealMuted mt-1">16 × 16 px</span>
+          </div>
+
+          <!-- Key Metrics Grid -->
+          <div class="grid grid-cols-2 gap-2 flex-1 font-mono text-xs">
+            <div class="bg-tealDark p-2 rounded-lg border border-tealBorder">
+              <span class="text-[10px] text-tealMuted block">0-Based Index</span>
+              <span id="statId0" class="text-base font-bold text-tealText">23</span>
+            </div>
+            <div class="bg-tealDark p-2 rounded-lg border border-tealBorder">
+              <span class="text-[10px] text-tealMuted block">1-Based (Tiled GID)</span>
+              <span id="statId1" class="text-base font-bold text-neonCyan">24</span>
+            </div>
+            <div class="bg-tealDark p-2 rounded-lg border border-tealBorder">
+              <span class="text-[10px] text-tealMuted block">Grid (tx, ty)</span>
+              <span id="statGridCoord" class="text-sm font-bold text-neonPink">(7, 2)</span>
+            </div>
+            <div class="bg-tealDark p-2 rounded-lg border border-tealBorder">
+              <span class="text-[10px] text-tealMuted block">Pixel (x, y)</span>
+              <span id="statPixelCoord" class="text-sm font-bold text-neonAmber">(112, 32)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 2: Visual tx / ty Math Breakdown -->
+      <div class="bg-tealPanel border border-tealBorder rounded-xl p-4 shadow-lg">
+        <div class="flex items-center justify-between border-b border-tealBorder pb-2.5 mb-3">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-square-root-variable text-neonCyan"></i>
+            <h2 class="font-bold text-sm text-tealText">Visual <code class="text-neonPink font-mono">tx / ty</code> Math Breakdown</h2>
+          </div>
+          <span id="mathModeLabel" class="text-[11px] font-mono text-tealMuted">0-Based Formula</span>
+        </div>
+
+        <div id="mathBreakdownBox" class="bg-tealDark rounded-lg p-3 border border-tealBorder font-mono text-xs space-y-2 leading-relaxed">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+
+      <!-- CARD 3: Ready-to-Copy C17 / SDL3 Code Snippets -->
+      <div class="bg-tealPanel border border-tealBorder rounded-xl p-4 shadow-lg space-y-3">
+        <div class="flex items-center justify-between border-b border-tealBorder pb-2.5">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-code text-neonAmber"></i>
+            <h2 class="font-bold text-sm text-tealText">C17 + SDL3 Code Generator</h2>
+          </div>
+        </div>
+
+        <!-- Snippet 1: Direct SDL_FRect source literal -->
+        <div>
+          <div class="flex items-center justify-between text-xs mb-1">
+            <span class="text-tealMuted font-medium">1. Direct <code class="text-tealText font-mono">SDL_FRect</code> for Pinned Tile:</span>
+            <button data-copy="snippetRect" class="copy-btn text-neonCyan hover:underline font-mono text-[11px] flex items-center gap-1">
+              <i class="fa-regular fa-copy"></i> Copy
+            </button>
+          </div>
+          <pre id="snippetRect" class="bg-tealDark border border-tealBorder rounded-lg p-2.5 font-mono text-[11px] text-tealText overflow-x-auto"></pre>
+        </div>
+
+        <!-- Snippet 2: Dynamic tile() function matching current spritesheet -->
+        <div>
+          <div class="flex items-center justify-between text-xs mb-1">
+            <span class="text-tealMuted font-medium">2. SDL3 <code class="text-tealText font-mono">tile()</code> Helper Function:</span>
+            <button data-copy="snippetFunc" class="copy-btn text-neonCyan hover:underline font-mono text-[11px] flex items-center gap-1">
+              <i class="fa-regular fa-copy"></i> Copy
+            </button>
+          </div>
+          <pre id="snippetFunc" class="bg-tealDark border border-tealBorder rounded-lg p-2.5 font-mono text-[11px] text-tealText overflow-x-auto"></pre>
+        </div>
+
+        <!-- Snippet 3: Custom Tile Enum / #define List -->
+        <div>
+          <div class="flex items-center justify-between text-xs mb-1">
+            <span class="text-tealMuted font-medium">3. Custom Tile Enum / Macros:</span>
+            <div class="flex items-center gap-2">
+              <button id="clearMacrosBtn" class="text-tealMuted hover:text-red-400 font-mono text-[11px]">Reset</button>
+              <button data-copy="snippetEnum" class="copy-btn text-neonCyan hover:underline font-mono text-[11px] flex items-center gap-1">
+                <i class="fa-regular fa-copy"></i> Copy
+              </button>
+            </div>
+          </div>
+          <pre id="snippetEnum" class="bg-tealDark border border-tealBorder rounded-lg p-2.5 font-mono text-[11px] text-tealText overflow-x-auto max-h-36"></pre>
+        </div>
+      </div>
+
+    </aside>
+  </main>
+
+  <!-- Floating Cursor Tooltip -->
+  <div id="tooltip" class="fixed z-50 pointer-events-none hidden bg-tealDark/95 border border-neonPink text-tealText px-3 py-2 rounded-lg shadow-2xl font-mono text-xs backdrop-blur-sm">
+    <div class="flex items-center justify-between gap-4 border-b border-tealBorder pb-1 mb-1">
+      <span id="ttTitle" class="font-bold text-neonPink text-sm">ID: 23</span>
+      <span id="ttAltId" class="text-[11px] text-neonCyan">GID: 24</span>
+    </div>
+    <div id="ttCoords" class="text-[11px] text-tealText">tx: 7, ty: 2</div>
+    <div id="ttPixels" class="text-[10px] text-tealMuted">src: {112, 32, 16, 16}</div>
+  </div>
 
   <script>
+    // =========================================================================
+    // APPLICATION STATE
+    // =========================================================================
+    const state = {
+      image: new Image(),
+      imageName: "demo_rpg_atlas.png",
+      frameW: 16,
+      frameH: 16,
+      margin: 0,
+      spacing: 0,
+      cols: 8,
+      rows: 8,
+      zoom: 3,
+      oneBased: false, // false = 0-based (C array), true = 1-based (Tiled GID)
+      showGrid: true,
+      showIds: true,
+      gridColor: "#FC0A7F",
+      bgMode: 0, // 0 = checker-dark, 1 = checker-light, 2 = solid dark
+      pinnedIndex: 23, // Always stored as 0-based index internally
+      hoverIndex: null,
+      animStartIndex: 23,
+      animEndIndex: 23,
+      animPlaying: true,
+      animFps: 6,
+      animCurrentFrame: 0,
+      lastAnimTick: 0,
+      macros: [
+        { name: "TILE_WALL", index0: 2 },
+        { name: "TILE_BORDER", index0: 18 },
+        { name: "TILE_GRASS", index0: 23 }
+      ],
+      // Scratchpad Map State
+      mapCols: 16,
+      mapRows: 12,
+      mapCells: [],
+      mapExportMode: "map", // "map" or "c"
+      isPaintingMap: false,
+      paintEraseMode: false
+    };
+
+    // =========================================================================
+    // DOM ELEMENTS
+    // =========================================================================
     const fileInput = document.getElementById("fileInput");
+    const loadDemoBtn = document.getElementById("loadDemoBtn");
     const frameWidthInput = document.getElementById("frameWidth");
     const frameHeightInput = document.getElementById("frameHeight");
-    const generateButton = document.getElementById("generateButton");
+    const marginInput = document.getElementById("marginInput");
+    const spacingInput = document.getElementById("spacingInput");
+    const mode0Btn = document.getElementById("mode0Btn");
+    const mode1Btn = document.getElementById("mode1Btn");
+    const showGridToggle = document.getElementById("showGridToggle");
+    const showIdsToggle = document.getElementById("showIdsToggle");
+    const gridColorPicker = document.getElementById("gridColorPicker");
+    const bgCycleBtn = document.getElementById("bgCycleBtn");
+    const bgLabel = document.getElementById("bgLabel");
+
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
+    const dropZone = document.getElementById("dropZone");
+    const dropOverlay = document.getElementById("dropOverlay");
     const tooltip = document.getElementById("tooltip");
+
+    const previewCanvas = document.getElementById("previewCanvas");
+    const previewCtx = previewCanvas.getContext("2d");
+    const animCanvas = document.getElementById("animCanvas");
+    const animCtx = animCanvas.getContext("2d");
+
+    const imageNameBadge = document.getElementById("imageNameBadge");
     const imageInfo = document.getElementById("imageInfo");
+    const gridSummary = document.getElementById("gridSummary");
 
-    let image = new Image();
-    let currentFrameWidth = 16;
-    let currentFrameHeight = 16;
-    let cols = 0, rows = 0;
+    // Inspector Elements
+    const lockStatusBadge = document.getElementById("lockStatusBadge");
+    const rulerTopLeft = document.getElementById("rulerTopLeft");
+    const rulerSize = document.getElementById("rulerSize");
+    const statId0 = document.getElementById("statId0");
+    const statId1 = document.getElementById("statId1");
+    const statGridCoord = document.getElementById("statGridCoord");
+    const statPixelCoord = document.getElementById("statPixelCoord");
+    const mathModeLabel = document.getElementById("mathModeLabel");
+    const mathBreakdownBox = document.getElementById("mathBreakdownBox");
+    const snippetRect = document.getElementById("snippetRect");
+    const snippetFunc = document.getElementById("snippetFunc");
+    const snippetEnum = document.getElementById("snippetEnum");
 
-    fileInput.addEventListener("change", function (e) {
-      const file = e.target.files[0];
-      if (!file) return;
+    // Animation Controls
+    const animRangeBadge = document.getElementById("animRangeBadge");
+    const animPlayBtn = document.getElementById("animPlayBtn");
+    const animFpsSlider = document.getElementById("animFpsSlider");
+    const animFpsLabel = document.getElementById("animFpsLabel");
 
-      const reader = new FileReader();
-      reader.onload = function (event) {
-        image.onload = function () {
+    // View Tabs & Map Scratchpad
+    const tabAtlasBtn = document.getElementById("tabAtlasBtn");
+    const tabScratchpadBtn = document.getElementById("tabScratchpadBtn");
+    const atlasViewPanel = document.getElementById("atlasViewPanel");
+    const scratchpadViewPanel = document.getElementById("scratchpadViewPanel");
+    const mapPainterCanvas = document.getElementById("mapPainterCanvas");
+    const mapPainterCtx = mapPainterCanvas.getContext("2d");
+    const mapColsInput = document.getElementById("mapColsInput");
+    const mapRowsInput = document.getElementById("mapRowsInput");
+    const mapExportTextarea = document.getElementById("mapExportTextarea");
+    const activeBrushBadge = document.getElementById("activeBrushBadge");
 
-          //Set canvas size to the image dimensions
-          canvas.width = image.width;
-          canvas.height = image.height;
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(image, 0, 0);
+    // =========================================================================
+    // 1. PROCEDURAL 128x128 (8x8) RPG DEMO TILESET GENERATOR
+    // =========================================================================
+    function generateProceduralRpgAtlas() {
+      const offscreen = document.createElement("canvas");
+      offscreen.width = 128;
+      offscreen.height = 128;
+      const octx = offscreen.getContext("2d");
+      octx.imageSmoothingEnabled = false;
 
-          imageInfo.textContent = `Image Dimensions: ${image.width} x ${image.height}`;
-
-        }
-        image.src = event.target.result;
+      // Helper to draw a 16x16 tile at index (0..63)
+      function drawTileArt(index, drawFn) {
+        const tx = (index % 8) * 16;
+        const ty = Math.floor(index / 8) * 16;
+        octx.save();
+        octx.translate(tx, ty);
+        drawFn(octx);
+        octx.restore();
       }
-      reader.readAsDataURL(file);
-    });
 
-    generateButton.addEventListener("click", function () {
-      if (!image.src) {
-        alert("Please select an image first.");
-        return;
+      for (let i = 0; i < 64; i++) {
+        drawTileArt(i, (c) => {
+          const row = Math.floor(i / 8);
+          const col = i % 8;
+
+          if (i === 0) {
+            // Tile 0: Void / Empty marker tile
+            c.fillStyle = "#14181d";
+            c.fillRect(0, 0, 16, 16);
+            c.strokeStyle = "#2b3640";
+            c.strokeRect(1.5, 1.5, 13, 13);
+          } else if (i === 2 || (row === 0 && col >= 1 && col <= 5)) {
+            // Stone brick wall tiles (including ID 2 from user's start.map)
+            c.fillStyle = "#475569";
+            c.fillRect(0, 0, 16, 16);
+            c.fillStyle = "#64748b";
+            c.fillRect(1, 1, 6, 6);
+            c.fillRect(9, 1, 6, 6);
+            c.fillRect(1, 9, 10, 6);
+            c.fillRect(12, 9, 3, 6);
+            c.fillStyle = "#1e293b";
+            c.fillRect(0, 7, 16, 1);
+            c.fillRect(0, 15, 16, 1);
+          } else if (i === 18 || (row === 2 && col <= 4)) {
+            // Cobblestone / Border wall (ID 18 from user's C code)
+            c.fillStyle = "#334155";
+            c.fillRect(0, 0, 16, 16);
+            c.fillStyle = "#94a3b8";
+            c.fillRect(2, 2, 5, 5);
+            c.fillRect(9, 3, 5, 4);
+            c.fillRect(3, 9, 6, 5);
+            c.fillRect(10, 9, 4, 5);
+          } else if (i === 23 || i === 24 || (row === 2 && col >= 5) || row === 3) {
+            // Lush RPG Grass variants (ID 23 & 24 from user's start.map!)
+            c.fillStyle = i === 23 ? "#15803d" : "#166534";
+            c.fillRect(0, 0, 16, 16);
+            c.fillStyle = "#22c55e";
+            // Grass blades
+            c.fillRect(3, 4, 1, 3);
+            c.fillRect(4, 3, 1, 2);
+            c.fillRect(11, 10, 1, 3);
+            c.fillRect(12, 9, 1, 2);
+            c.fillRect(6, 12, 1, 2);
+            if (i % 2 === 0) {
+              c.fillStyle = "#4ade80";
+              c.fillRect(8, 5, 2, 2);
+            }
+          } else if (row === 1) {
+            // Animated Water tiles (IDs 8..15)
+            c.fillStyle = "#0284c7";
+            c.fillRect(0, 0, 16, 16);
+            c.fillStyle = "#38bdf8";
+            const waveOffset = (col * 2) % 8;
+            c.fillRect(2 + waveOffset, 4, 5, 1);
+            c.fillRect((8 - waveOffset) % 10, 11, 6, 1);
+          } else if (row === 4) {
+            // Dirt path & Wooden Bridge tiles
+            c.fillStyle = "#92400e";
+            c.fillRect(0, 0, 16, 16);
+            c.fillStyle = "#b45309";
+            c.fillRect(2, 2, 12, 12);
+            c.fillStyle = "#78350f";
+            c.fillRect(4, 5, 2, 2);
+            c.fillRect(10, 11, 2, 2);
+          } else if (row === 5) {
+            // Dungeon Chests, Doors, Potions, Coins
+            c.fillStyle = "#1e293b";
+            c.fillRect(0, 0, 16, 16);
+            c.fillStyle = col % 2 === 0 ? "#eab308" : "#f97316";
+            c.fillRect(3, 4, 10, 9);
+            c.fillStyle = "#fef08a";
+            c.fillRect(7, 7, 2, 3);
+          } else {
+            // Rows 6 & 7: Hero Character Animation Frames (Walk cycle)
+            c.fillStyle = "#0f172a";
+            c.fillRect(0, 0, 16, 16);
+            const bob = col % 2;
+            // Head
+            c.fillStyle = "#fde047";
+            c.fillRect(5, 2 + bob, 6, 5);
+            // Tunic
+            c.fillStyle = row === 6 ? "#ec4899" : "#06b6d4";
+            c.fillRect(4, 7 + bob, 8, 5);
+            // Boots
+            c.fillStyle = "#94a3b8";
+            c.fillRect(5 - (col % 2), 12, 2, 3);
+            c.fillRect(9 + (col % 2), 12, 2, 3);
+          }
+        });
       }
 
-      currentFrameWidth = parseInt(frameWidthInput.value, 10);
-      currentFrameHeight = parseInt(frameHeightInput.value, 10);
-      if (!currentFrameWidth || !currentFrameHeight) {
-        alert("Please enter valid frame dimensions.");
-        return;
-      }
+      state.imageName = "demo_rpg_atlas.png";
+      state.image.onload = () => {
+        frameWidthInput.value = 16;
+        frameHeightInput.value = 16;
+        marginInput.value = 0;
+        spacingInput.value = 0;
+        state.frameW = 16;
+        state.frameH = 16;
+        state.margin = 0;
+        state.spacing = 0;
+        state.pinnedIndex = 23;
+        state.animStartIndex = 48; // Hero walk strip
+        state.animEndIndex = 51;
+        updateGridMetrics();
+        renderAtlas();
+        updateInspector();
+        initScratchpadMap();
+      };
+      state.image.src = offscreen.toDataURL();
+    }
 
-      drawOverlay();
+    // =========================================================================
+    // 2. CORE GRID METRICS & COORDINATE HELPERS
+    // =========================================================================
+    function updateGridMetrics() {
+      if (!state.image.width || !state.image.height) return;
 
-    });
+      state.frameW = Math.max(1, parseInt(frameWidthInput.value, 10) || 16);
+      state.frameH = Math.max(1, parseInt(frameHeightInput.value, 10) || 16);
+      state.margin = Math.max(0, parseInt(marginInput.value, 10) || 0);
+      state.spacing = Math.max(0, parseInt(spacingInput.value, 10) || 0);
 
-    function drawOverlay() {
+      const usableW = Math.max(0, state.image.width - state.margin * 2 + state.spacing);
+      const usableH = Math.max(0, state.image.height - state.margin * 2 + state.spacing);
+
+      state.cols = Math.max(1, Math.floor(usableW / (state.frameW + state.spacing)));
+      state.rows = Math.max(1, Math.floor(usableH / (state.frameH + state.spacing)));
+
+      const total = state.cols * state.rows;
+      if (state.pinnedIndex >= total) state.pinnedIndex = Math.max(0, total - 1);
+      if (state.animStartIndex >= total) state.animStartIndex = state.pinnedIndex;
+      if (state.animEndIndex >= total) state.animEndIndex = state.pinnedIndex;
+
+      imageNameBadge.textContent = state.imageName;
+      imageInfo.textContent = `${state.image.width} × ${state.image.height} px`;
+      gridSummary.textContent = `${state.cols} cols × ${state.rows} rows (${total} tiles)`;
+    }
+
+    function getTileRectByIndex0(index0) {
+      const tx = index0 % state.cols;
+      const ty = Math.floor(index0 / state.cols);
+      const px = state.margin + tx * (state.frameW + state.spacing);
+      const py = state.margin + ty * (state.frameH + state.spacing);
+      return { tx, ty, px, py, w: state.frameW, h: state.frameH };
+    }
+
+    function displayIdFromIndex0(index0) {
+      return state.oneBased ? index0 + 1 : index0;
+    }
+
+    // =========================================================================
+    // 3. RENDER SPRITESHEET CANVAS & OVERLAY
+    // =========================================================================
+    function renderAtlas() {
+      if (!state.image.src) return;
+
+      const z = state.zoom;
+      canvas.width = state.image.width * z;
+      canvas.height = state.image.height * z;
+      ctx.imageSmoothingEnabled = false;
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(image, 0, 0);
-      cols = Math.floor(image.width / currentFrameWidth);
-      rows = Math.floor(image.height / currentFrameHeight);
-      let frameNumber = 0;
-      ctx.strokeStyle = "#FC0A7F";
-      ctx.lineWidth = 1;
-      ctx.font = "12px Arial";
-      ctx.fillStyle = "#FC0A7F";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
+      ctx.drawImage(state.image, 0, 0, canvas.width, canvas.height);
 
-      for (let row = 0; row < rows; row++) {
-        for (let col = 0; col < cols; col++) {
-          const x = col * currentFrameWidth;
-          const y = row * currentFrameHeight;
-          ctx.strokeRect(x, y, currentFrameWidth, currentFrameHeight);
-          ctx.fillText(frameNumber, x + currentFrameWidth / 2, y + currentFrameHeight / 2);
-          frameNumber++;
+      const total = state.cols * state.rows;
+
+      for (let idx = 0; idx < total; idx++) {
+        const { px, py, w, h } = getTileRectByIndex0(idx);
+        const sx = px * z;
+        const sy = py * z;
+        const sw = w * z;
+        const sh = h * z;
+
+        // Grid Cell Stroke
+        if (state.showGrid) {
+          ctx.strokeStyle = state.gridColor;
+          ctx.globalAlpha = 0.65;
+          ctx.lineWidth = 1;
+          ctx.strokeRect(sx + 0.5, sy + 0.5, sw - 1, sh - 1);
+          ctx.globalAlpha = 1.0;
+        }
+
+        // Highlight Animation Range
+        const minAnim = Math.min(state.animStartIndex, state.animEndIndex);
+        const maxAnim = Math.max(state.animStartIndex, state.animEndIndex);
+        if (minAnim !== maxAnim && idx >= minAnim && idx <= maxAnim) {
+          ctx.fillStyle = "rgba(0, 242, 254, 0.18)";
+          ctx.fillRect(sx, sy, sw, sh);
+          ctx.strokeStyle = "#00f2fe";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(sx + 1, sy + 1, sw - 2, sh - 2);
+        }
+
+        // Highlight Pinned Tile
+        if (idx === state.pinnedIndex) {
+          ctx.fillStyle = "rgba(252, 10, 127, 0.24)";
+          ctx.fillRect(sx, sy, sw, sh);
+          ctx.strokeStyle = "#ffb800";
+          ctx.lineWidth = 2.5;
+          ctx.strokeRect(sx + 1, sy + 1, sw - 2, sh - 2);
+        }
+
+        // Highlight Hovered Tile
+        if (idx === state.hoverIndex && idx !== state.pinnedIndex) {
+          ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
+          ctx.fillRect(sx, sy, sw, sh);
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(sx + 1, sy + 1, sw - 2, sh - 2);
+        }
+
+        // Draw Tile ID Number
+        if (state.showIds && sw >= 20 && sh >= 14) {
+          const label = String(displayIdFromIndex0(idx));
+          const fontSize = Math.max(9, Math.min(16, Math.floor(sw * 0.34)));
+          ctx.font = `bold ${fontSize}px "JetBrains Mono", monospace`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+
+          // High-contrast text shadow/pill for readability
+          ctx.fillStyle = "rgba(15, 20, 22, 0.78)";
+          const textW = ctx.measureText(label).width + 4;
+          ctx.fillRect(sx + (sw - textW) / 2, sy + (sh - fontSize - 2) / 2, textW, fontSize + 2);
+
+          ctx.fillStyle = idx === state.pinnedIndex ? "#ffb800" : state.gridColor;
+          ctx.fillText(label, sx + sw / 2, sy + sh / 2 + 0.5);
         }
       }
     }
 
-    canvas.addEventListener("mousemove", function (e) {
-      if (!currentFrameWidth || !currentFrameHeight) return;
-      const rect = canvas.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
-      const col = Math.floor(mouseX / currentFrameWidth);
-      const row = Math.floor(mouseY / currentFrameHeight);
+    // =========================================================================
+    // 4. UPDATE RIGHT SIDEBAR INSPECTOR, MATH BREAKDOWN & C SNIPPETS
+    // =========================================================================
+    function updateInspector() {
+      const idx0 = state.pinnedIndex;
+      const id1 = idx0 + 1;
+      const activeId = displayIdFromIndex0(idx0);
+      const { tx, ty, px, py, w, h } = getTileRectByIndex0(idx0);
 
-      if (col < cols && row < rows) {
-        const frameNumber = row * cols + col;
-        tooltip.innerText = "Frame Number: " + frameNumber;
-        tooltip.style.left = (e.pageX + 10) + "px";
-        tooltip.style.top = (e.pageY + 10) + "px";
-        tooltip.style.display = "block";
-      } 
-      else {
-        tooltip.style.display = "none";
+      // Update Header & Metric Badges
+      lockStatusBadge.textContent = state.oneBased ? `Pinned GID #${id1}` : `Pinned ID #${idx0}`;
+      activeBrushBadge.textContent = `ID ${activeId}`;
+      rulerTopLeft.textContent = `(${px}, ${py})`;
+      rulerSize.textContent = `${w} × ${h} px`;
+
+      statId0.textContent = idx0;
+      statId1.textContent = id1;
+      statGridCoord.textContent = `(${tx}, ${ty})`;
+      statPixelCoord.textContent = `(${px}, ${py})`;
+
+      // Draw Magnified Preview
+      previewCtx.imageSmoothingEnabled = false;
+      previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+      if (state.image.src) {
+        previewCtx.drawImage(
+          state.image,
+          px, py, w, h,
+          0, 0, previewCanvas.width, previewCanvas.height
+        );
+      }
+
+      // Update Visual tx / ty Math Breakdown
+      mathModeLabel.textContent = state.oneBased ? "1-Based (Tiled GID)" : "0-Based (C Array)";
+      const cols = state.cols;
+
+      if (state.oneBased) {
+        mathBreakdownBox.innerHTML = `
+          <div class="text-tealMuted">// Step 1: Convert 1-based GID to 0-based index</div>
+          <div><span class="text-neonCyan">int</span> index = id - 1; <span class="text-tealMuted">// ${id1} - 1 = </span><span class="text-white font-bold">${idx0}</span></div>
+          <div class="text-tealMuted pt-1">// Step 2: Modulo (%) gives Column (tx), Integer Div (/) gives Row (ty)</div>
+          <div><span class="text-neonCyan">int</span> tx = index % ${cols}; <span class="text-tealMuted">// ${idx0} % ${cols} = </span><span class="text-neonPink font-bold">${tx}</span></div>
+          <div><span class="text-neonCyan">int</span> ty = index / ${cols}; <span class="text-tealMuted">// ${idx0} / ${cols} = </span><span class="text-neonPink font-bold">${ty}</span></div>
+          <div class="text-tealMuted pt-1">// Step 3: Multiply by Tile Size (${w}x${h}) for Pixel Coordinates</div>
+          <div>src.x = tx * ${w}; <span class="text-tealMuted">// ${tx} * ${w} = </span><span class="text-neonAmber font-bold">${px}.0f</span></div>
+          <div>src.y = ty * ${h}; <span class="text-tealMuted">// ${ty} * ${h} = </span><span class="text-neonAmber font-bold">${py}.0f</span></div>
+        `;
+      } else {
+        mathBreakdownBox.innerHTML = `
+          <div class="text-tealMuted">// Step 1: Modulo (%) gives Column (tx), Integer Div (/) gives Row (ty)</div>
+          <div><span class="text-neonCyan">int</span> tx = id % ${cols}; <span class="text-tealMuted">// ${idx0} % ${cols} = </span><span class="text-neonPink font-bold">${tx}</span></div>
+          <div><span class="text-neonCyan">int</span> ty = id / ${cols}; <span class="text-tealMuted">// ${idx0} / ${cols} = </span><span class="text-neonPink font-bold">${ty}</span></div>
+          <div class="text-tealMuted pt-1">// Step 2: Multiply by Tile Size (${w}x${h}) for Pixel Coordinates</div>
+          <div>src.x = tx * ${w}; <span class="text-tealMuted">// ${tx} * ${w} = </span><span class="text-neonAmber font-bold">${px}.0f</span></div>
+          <div>src.y = ty * ${h}; <span class="text-tealMuted">// ${ty} * ${h} = </span><span class="text-neonAmber font-bold">${py}.0f</span></div>
+        `;
+      }
+
+      // Snippet 1: Direct SDL_FRect
+      snippetRect.textContent =
+        `// Tile ID ${activeId} -> Grid (tx=${tx}, ty=${ty})\n` +
+        `SDL_FRect source = { ${px}.0f, ${py}.0f, ${w}.0f, ${h}.0f };`;
+
+      // Snippet 2: Dynamic SDL3 tile() Helper
+      if (state.oneBased) {
+        snippetFunc.textContent =
+`void tile(SDL_Renderer *r, SDL_Texture *atlas, int id, float x, float y)
+{
+  if (id <= 0) return; // 0 is empty in Tiled
+  int index = id - 1;
+  int tx = index % ${cols}; // ${cols} columns in ${state.image.width}x${state.image.height} atlas
+  int ty = index / ${cols};
+  SDL_FRect source = { (float)(tx * ${w}), (float)(ty * ${h}), ${w}.0f, ${h}.0f };
+  SDL_FRect dest   = { x, y, 32.0f, 32.0f };
+  SDL_RenderTexture(r, atlas, &source, &dest);
+}`;
+      } else {
+        snippetFunc.textContent =
+`void tile(SDL_Renderer *r, SDL_Texture *atlas, int id, float x, float y)
+{
+  if (id < 0) return;
+  int tx = id % ${cols}; // ${cols} columns in ${state.image.width}x${state.image.height} atlas
+  int ty = id / ${cols};
+  SDL_FRect source = { (float)(tx * ${w}), (float)(ty * ${h}), ${w}.0f, ${h}.0f };
+  SDL_FRect dest   = { x, y, 32.0f, 32.0f };
+  SDL_RenderTexture(r, atlas, &source, &dest);
+}`;
+      }
+
+      // Snippet 3: Enum / Macros
+      renderMacrosSnippet();
+    }
+
+    function renderMacrosSnippet() {
+      if (state.macros.length === 0) {
+        snippetEnum.textContent = "// Add tiles using the input bar below the canvas";
+        return;
+      }
+      const lines = state.macros.map(m => {
+        const val = displayIdFromIndex0(m.index0);
+        const { tx, ty } = getTileRectByIndex0(m.index0);
+        return `  ${m.name.padEnd(16, " ")} = ${String(val).padStart(2, " ")}, // (tx=${tx}, ty=${ty})`;
+      });
+      snippetEnum.textContent = `typedef enum {\n${lines.join("\n")}\n} TileId;`;
+    }
+
+    // =========================================================================
+    // 5. ANIMATION FLIPBOOK LOOP
+    // =========================================================================
+    function updateAnimationLoop(timestamp) {
+      if (state.animPlaying && state.image.src) {
+        const interval = 1000 / state.animFps;
+        if (timestamp - state.lastAnimTick >= interval) {
+          state.lastAnimTick = timestamp;
+          const minIdx = Math.min(state.animStartIndex, state.animEndIndex);
+          const maxIdx = Math.max(state.animStartIndex, state.animEndIndex);
+          const count = maxIdx - minIdx + 1;
+
+          state.animCurrentFrame = (state.animCurrentFrame + 1) % count;
+          const currentTileIdx = minIdx + state.animCurrentFrame;
+          const { px, py, w, h } = getTileRectByIndex0(currentTileIdx);
+
+          animCtx.imageSmoothingEnabled = false;
+          animCtx.clearRect(0, 0, animCanvas.width, animCanvas.height);
+          animCtx.drawImage(state.image, px, py, w, h, 0, 0, animCanvas.width, animCanvas.height);
+
+          if (minIdx === maxIdx) {
+            animRangeBadge.textContent = `Tile #${displayIdFromIndex0(minIdx)}`;
+          } else {
+            animRangeBadge.textContent = `Frames ${displayIdFromIndex0(minIdx)}..${displayIdFromIndex0(maxIdx)} (${count})`;
+          }
+        }
+      }
+      requestAnimationFrame(updateAnimationLoop);
+    }
+
+    // =========================================================================
+    // 6. MINI MAP MATRIX TESTER / SCRATCHPAD
+    // =========================================================================
+    function initScratchpadMap() {
+      state.mapCols = Math.max(4, Math.min(32, parseInt(mapColsInput.value, 10) || 16));
+      state.mapRows = Math.max(4, Math.min(24, parseInt(mapRowsInput.value, 10) || 12));
+
+      state.mapCells = [];
+      for (let y = 0; y < state.mapRows; y++) {
+        const row = [];
+        for (let x = 0; x < state.mapCols; x++) {
+          const isBorder = x === 0 || y === 0 || x === state.mapCols - 1 || y === state.mapRows - 1;
+          row.push(isBorder ? 2 : 23); // Default to border=2, interior=23 like user's start.map
+        }
+        state.mapCells.push(row);
+      }
+      renderScratchpadMap();
+    }
+
+    function renderScratchpadMap() {
+      const cellPx = 28;
+      mapPainterCanvas.width = state.mapCols * cellPx;
+      mapPainterCanvas.height = state.mapRows * cellPx;
+      mapPainterCtx.imageSmoothingEnabled = false;
+      mapPainterCtx.clearRect(0, 0, mapPainterCanvas.width, mapPainterCanvas.height);
+
+      for (let y = 0; y < state.mapRows; y++) {
+        for (let x = 0; x < state.mapCols; x++) {
+          const idx0 = state.mapCells[y][x];
+          if (idx0 >= 0 && state.image.src) {
+            const { px, py, w, h } = getTileRectByIndex0(idx0);
+            mapPainterCtx.drawImage(
+              state.image,
+              px, py, w, h,
+              x * cellPx, y * cellPx, cellPx, cellPx
+            );
+          }
+          mapPainterCtx.strokeStyle = "rgba(75, 94, 94, 0.45)";
+          mapPainterCtx.strokeRect(x * cellPx + 0.5, y * cellPx + 0.5, cellPx - 1, cellPx - 1);
+        }
+      }
+
+      updateMapExportText();
+    }
+
+    function updateMapExportText() {
+      if (state.mapExportMode === "map") {
+        const header = `${state.mapCols} ${state.mapRows}`;
+        const rowsTxt = state.mapCells.map(row =>
+          row.map(idx0 => idx0 < 0 ? 0 : displayIdFromIndex0(idx0)).join(" ")
+        );
+        mapExportTextarea.value = `${header}\n${rowsTxt.join("\n")}\n`;
+      } else {
+        const rowsTxt = state.mapCells.map(row =>
+          `  { ${row.map(idx0 => String(idx0 < 0 ? 0 : displayIdFromIndex0(idx0)).padStart(2, " ")).join(", ")} }`
+        );
+        mapExportTextarea.value =
+          `int cells[${state.mapRows}][${state.mapCols}] = {\n${rowsTxt.join(",\n")}\n};`;
+      }
+    }
+
+    function paintMapAtEvent(e) {
+      const rect = mapPainterCanvas.getBoundingClientRect();
+      const cellPx = mapPainterCanvas.width / state.mapCols;
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      const gx = Math.floor(mx / cellPx);
+      const gy = Math.floor(my / cellPx);
+
+      if (gx >= 0 && gx < state.mapCols && gy >= 0 && gy < state.mapRows) {
+        state.mapCells[gy][gx] = state.paintEraseMode ? 0 : state.pinnedIndex;
+        renderScratchpadMap();
+      }
+    }
+
+    // =========================================================================
+    // 7. EVENT LISTENERS & INTERACTIONS
+    // =========================================================================
+    function getTileIndexFromMouseEvent(e) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const imgX = (e.clientX - rect.left) * scaleX / state.zoom;
+      const imgY = (e.clientY - rect.top) * scaleY / state.zoom;
+
+      const relX = imgX - state.margin;
+      const relY = imgY - state.margin;
+      if (relX < 0 || relY < 0) return null;
+
+      const strideX = state.frameW + state.spacing;
+      const strideY = state.frameH + state.spacing;
+      const col = Math.floor(relX / strideX);
+      const row = Math.floor(relY / strideY);
+
+      if (col >= 0 && col < state.cols && row >= 0 && row < state.rows) {
+        return row * state.cols + col;
+      }
+      return null;
+    }
+
+    canvas.addEventListener("mousemove", (e) => {
+      const idx = getTileIndexFromMouseEvent(e);
+      if (idx !== null) {
+        if (state.hoverIndex !== idx) {
+          state.hoverIndex = idx;
+          renderAtlas();
+        }
+        const { tx, ty, px, py, w, h } = getTileRectByIndex0(idx);
+        document.getElementById("ttTitle").textContent = state.oneBased ? `GID: ${idx + 1}` : `ID: ${idx}`;
+        document.getElementById("ttAltId").textContent = state.oneBased ? `(0-idx: ${idx})` : `(GID: ${idx + 1})`;
+        document.getElementById("ttCoords").textContent = `tx: ${tx}, ty: ${ty}`;
+        document.getElementById("ttPixels").textContent = `src: {${px}, ${py}, ${w}, ${h}}`;
+
+        tooltip.style.left = `${e.clientX + 16}px`;
+        tooltip.style.top = `${e.clientY + 16}px`;
+        tooltip.classList.remove("hidden");
+      } else {
+        state.hoverIndex = null;
+        tooltip.classList.add("hidden");
+        renderAtlas();
       }
     });
 
-    canvas.addEventListener("mouseleave", function () {
-      tooltip.style.display = "none";
+    canvas.addEventListener("mouseleave", () => {
+      state.hoverIndex = null;
+      tooltip.classList.add("hidden");
+      renderAtlas();
     });
+
+    canvas.addEventListener("click", (e) => {
+      const idx = getTileIndexFromMouseEvent(e);
+      if (idx === null) return;
+
+      if (e.shiftKey) {
+        state.animEndIndex = idx;
+      } else {
+        state.pinnedIndex = idx;
+        state.animStartIndex = idx;
+        state.animEndIndex = idx;
+      }
+      renderAtlas();
+      updateInspector();
+    });
+
+    // File Upload & Drag-and-Drop
+    function handleImageFile(file) {
+      if (!file || !file.type.startsWith("image/")) return;
+      state.imageName = file.name;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        state.image.onload = () => {
+          state.pinnedIndex = 0;
+          state.animStartIndex = 0;
+          state.animEndIndex = 0;
+          updateGridMetrics();
+          renderAtlas();
+          updateInspector();
+          renderScratchpadMap();
+          showToast(`Loaded ${file.name} (${state.image.width}x${state.image.height})`);
+        };
+        state.image.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    fileInput.addEventListener("change", (e) => handleImageFile(e.target.files[0]));
+    loadDemoBtn.addEventListener("click", () => {
+      generateProceduralRpgAtlas();
+      showToast("Loaded 128x128 RPG Demo Atlas!");
+    });
+
+    dropZone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropOverlay.classList.remove("hidden");
+      dropOverlay.classList.add("flex");
+    });
+
+    dropZone.addEventListener("dragleave", () => {
+      dropOverlay.classList.add("hidden");
+      dropOverlay.classList.remove("flex");
+    });
+
+    dropZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropOverlay.classList.add("hidden");
+      dropOverlay.classList.remove("flex");
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        handleImageFile(e.dataTransfer.files[0]);
+      }
+    });
+
+    // Live Grid Dimension Inputs
+    [frameWidthInput, frameHeightInput, marginInput, spacingInput].forEach(inp => {
+      inp.addEventListener("input", () => {
+        updateGridMetrics();
+        renderAtlas();
+        updateInspector();
+      });
+    });
+
+    // Preset Tile Sizes
+    document.querySelectorAll(".preset-size-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const sz = parseInt(btn.dataset.size, 10);
+        frameWidthInput.value = sz;
+        frameHeightInput.value = sz;
+        document.querySelectorAll(".preset-size-btn").forEach(b => {
+          b.className = "preset-size-btn px-2 py-1 rounded bg-tealCard hover:bg-tealBorder text-tealText font-mono border border-tealBorder";
+        });
+        btn.className = "preset-size-btn px-2 py-1 rounded bg-neonPink/20 text-neonPink font-mono border border-neonPink/50";
+        updateGridMetrics();
+        renderAtlas();
+        updateInspector();
+      });
+    });
+
+    // Indexing Mode Toggle (0-Based vs 1-Based)
+    function setIndexingMode(oneBased) {
+      state.oneBased = oneBased;
+      if (oneBased) {
+        mode1Btn.className = "px-2.5 py-1 rounded font-mono text-xs transition bg-neonPink text-white font-semibold";
+        mode0Btn.className = "px-2.5 py-1 rounded font-mono text-xs transition text-tealMuted hover:text-tealText";
+      } else {
+        mode0Btn.className = "px-2.5 py-1 rounded font-mono text-xs transition bg-neonPink text-white font-semibold";
+        mode1Btn.className = "px-2.5 py-1 rounded font-mono text-xs transition text-tealMuted hover:text-tealText";
+      }
+      renderAtlas();
+      updateInspector();
+      updateMapExportText();
+    }
+    mode0Btn.addEventListener("click", () => setIndexingMode(false));
+    mode1Btn.addEventListener("click", () => setIndexingMode(true));
+
+    // Zoom Buttons
+    document.querySelectorAll(".zoom-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        state.zoom = parseInt(btn.dataset.zoom, 10);
+        document.querySelectorAll(".zoom-btn").forEach(b => {
+          b.className = "zoom-btn px-2 py-0.5 rounded font-mono text-tealMuted hover:text-tealText";
+        });
+        btn.className = "zoom-btn px-2 py-0.5 rounded font-mono bg-neonPink text-white font-semibold";
+        renderAtlas();
+      });
+    });
+
+    // Overlay Toggles
+    showGridToggle.addEventListener("change", (e) => {
+      state.showGrid = e.target.checked;
+      renderAtlas();
+    });
+    showIdsToggle.addEventListener("change", (e) => {
+      state.showIds = e.target.checked;
+      renderAtlas();
+    });
+    gridColorPicker.addEventListener("input", (e) => {
+      state.gridColor = e.target.value;
+      renderAtlas();
+    });
+
+    bgCycleBtn.addEventListener("click", () => {
+      state.bgMode = (state.bgMode + 1) % 3;
+      dropZone.classList.remove("checker-dark", "checker-light", "checker-solid");
+      if (state.bgMode === 0) {
+        dropZone.classList.add("checker-dark");
+        bgLabel.textContent = "Dark Grid";
+      } else if (state.bgMode === 1) {
+        dropZone.classList.add("checker-light");
+        bgLabel.textContent = "Light Grid";
+      } else {
+        dropZone.classList.add("checker-solid");
+        bgLabel.textContent = "Solid Dark";
+      }
+    });
+
+    // Animation Controls
+    animPlayBtn.addEventListener("click", () => {
+      state.animPlaying = !state.animPlaying;
+      animPlayBtn.innerHTML = state.animPlaying
+        ? '<i class="fa-solid fa-pause mr-1"></i>Pause'
+        : '<i class="fa-solid fa-play mr-1"></i>Play';
+    });
+    animFpsSlider.addEventListener("input", (e) => {
+      state.animFps = parseInt(e.target.value, 10);
+      animFpsLabel.textContent = `${state.animFps} fps`;
+    });
+
+    // Custom Enum Macro Builder
+    document.getElementById("addMacroBtn").addEventListener("click", () => {
+      const inp = document.getElementById("macroNameInput");
+      const rawName = inp.value.trim().toUpperCase().replace(/[^A-Z0-9_]/g, "_") || `TILE_${displayIdFromIndex0(state.pinnedIndex)}`;
+      state.macros.push({ name: rawName, index0: state.pinnedIndex });
+      inp.value = "";
+      renderMacrosSnippet();
+      showToast(`Added ${rawName} = ${displayIdFromIndex0(state.pinnedIndex)}`);
+    });
+
+    document.getElementById("clearMacrosBtn").addEventListener("click", () => {
+      state.macros = [];
+      renderMacrosSnippet();
+    });
+
+    // Tab Switching (Atlas Inspector vs Map Scratchpad)
+    tabAtlasBtn.addEventListener("click", () => {
+      atlasViewPanel.classList.remove("hidden");
+      atlasViewPanel.classList.add("flex");
+      scratchpadViewPanel.classList.add("hidden");
+      scratchpadViewPanel.classList.remove("flex");
+      tabAtlasBtn.className = "px-3 py-1.5 rounded-md text-xs font-medium transition flex items-center gap-1.5 bg-neonPink text-white shadow";
+      tabScratchpadBtn.className = "px-3 py-1.5 rounded-md text-xs font-medium transition flex items-center gap-1.5 text-tealMuted hover:text-tealText";
+    });
+
+    tabScratchpadBtn.addEventListener("click", () => {
+      scratchpadViewPanel.classList.remove("hidden");
+      scratchpadViewPanel.classList.add("flex");
+      atlasViewPanel.classList.add("hidden");
+      atlasViewPanel.classList.remove("flex");
+      tabScratchpadBtn.className = "px-3 py-1.5 rounded-md text-xs font-medium transition flex items-center gap-1.5 bg-neonPink text-white shadow";
+      tabAtlasBtn.className = "px-3 py-1.5 rounded-md text-xs font-medium transition flex items-center gap-1.5 text-tealMuted hover:text-tealText";
+      renderScratchpadMap();
+    });
+
+    // Map Scratchpad Painting Events
+    mapPainterCanvas.addEventListener("contextmenu", (e) => e.preventDefault());
+    mapPainterCanvas.addEventListener("mousedown", (e) => {
+      state.isPaintingMap = true;
+      state.paintEraseMode = (e.button === 2);
+      paintMapAtEvent(e);
+    });
+    window.addEventListener("mousemove", (e) => {
+      if (state.isPaintingMap) paintMapAtEvent(e);
+    });
+    window.addEventListener("mouseup", () => {
+      state.isPaintingMap = false;
+    });
+
+    document.getElementById("resizeMapBtn").addEventListener("click", initScratchpadMap);
+    document.getElementById("fillMapGrassBtn").addEventListener("click", () => {
+      for (let y = 0; y < state.mapRows; y++) {
+        for (let x = 0; x < state.mapCols; x++) {
+          state.mapCells[y][x] = state.pinnedIndex;
+        }
+      }
+      renderScratchpadMap();
+    });
+    document.getElementById("borderMapWallBtn").addEventListener("click", () => {
+      for (let y = 0; y < state.mapRows; y++) {
+        for (let x = 0; x < state.mapCols; x++) {
+          if (x === 0 || y === 0 || x === state.mapCols - 1 || y === state.mapRows - 1) {
+            state.mapCells[y][x] = state.pinnedIndex;
+          }
+        }
+      }
+      renderScratchpadMap();
+    });
+    document.getElementById("clearMapBtn").addEventListener("click", () => {
+      for (let y = 0; y < state.mapRows; y++) {
+        for (let x = 0; x < state.mapCols; x++) {
+          state.mapCells[y][x] = 0;
+        }
+      }
+      renderScratchpadMap();
+    });
+
+    const exportMapFormatBtn = document.getElementById("exportMapFormatBtn");
+    const exportCArrayBtn = document.getElementById("exportCArrayBtn");
+    exportMapFormatBtn.addEventListener("click", () => {
+      state.mapExportMode = "map";
+      exportMapFormatBtn.className = "px-2 py-0.5 text-[11px] font-mono rounded bg-neonPink text-white";
+      exportCArrayBtn.className = "px-2 py-0.5 text-[11px] font-mono rounded bg-tealCard text-tealMuted border border-tealBorder";
+      updateMapExportText();
+    });
+    exportCArrayBtn.addEventListener("click", () => {
+      state.mapExportMode = "c";
+      exportCArrayBtn.className = "px-2 py-0.5 text-[11px] font-mono rounded bg-neonPink text-white";
+      exportMapFormatBtn.className = "px-2 py-0.5 text-[11px] font-mono rounded bg-tealCard text-tealMuted border border-tealBorder";
+      updateMapExportText();
+    });
+
+    // Clipboard Copy Helper (iFrame safe)
+    function copyTextToClipboard(text) {
+      const temp = document.createElement("textarea");
+      temp.value = text;
+      document.body.appendChild(temp);
+      temp.select();
+      document.execCommand("copy");
+      document.body.removeChild(temp);
+      showToast("Copied C snippet to clipboard!");
+    }
+
+    document.querySelectorAll(".copy-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const targetId = btn.dataset.copy;
+        const text = document.getElementById(targetId).textContent;
+        copyTextToClipboard(text);
+      });
+    });
+
+    document.getElementById("copyMapExportBtn").addEventListener("click", () => {
+      copyTextToClipboard(mapExportTextarea.value);
+    });
+
+    let toastTimeout = null;
+    function showToast(msg) {
+      const toast = document.getElementById("toast");
+      document.getElementById("toastMsg").textContent = msg;
+      toast.classList.remove("hidden");
+      toast.classList.add("flex");
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.add("hidden");
+        toast.classList.remove("flex");
+      }, 2200);
+    }
+
+    // Initialize on load with procedural 128x128 RPG Demo Atlas
+    window.onload = () => {
+      generateProceduralRpgAtlas();
+      requestAnimationFrame(updateAnimationLoop);
+    };
   </script>
 </body>
 
